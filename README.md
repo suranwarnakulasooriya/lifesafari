@@ -13,7 +13,7 @@ The program's arguments are
 | -f   | --fullscreen | bool | spawn cells across the entire grid, keep off for rule sets that exhibit growth | False     |
 | -a   | --age        | bool | change the color of live cells based on how long they've been alive            | False     |
 | -s   | --seed       | int  | seed for random number generation                                     | random    |
-| -b   | --background | bgcolor  | color of dead cells (matplotlib color)                                         | black     |
+| -b   | --bgcolor | str  | color of dead cells (matplotlib color)                                         | black     |
 | -c   | --colormap   | str  | color map of live cells (matplotlib color)                                     | rainbow_r |
 | -l   | --list       | bool | print all named rulestring from the save file and exit                                     
 | -n   | --newname    | str  | save a rulestring with an associated name (two arguments) to the save file and exit
