@@ -132,57 +132,56 @@ def init_grid(c,gs,s):
     h = g.copy()
     return g, L, h
 
-def main():
-    '''Mainloop.'''
-    # parser
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description=('''\
-    LifeSafari: Simulate any life-like grid-based cellular automaton in Python
-    --------------------------------
-    simulation controls:
-      SPACE                 toggle pause
-      a                     toggle showing cell age (see -a)
-      c                     toggle whether cells spawn in the middle of the screen (see -f), use r or n to restart
-      r                     restart simulation with same seed
-      n                     restart simulation with new seed (overwrites previous seed)
-      ESC/q                 close simulation
-    
-    random generation with -r:
-      -r random             generate completely random rulestring
-      -r lifelike           same as random but guarantees consecutive numbers
-      -r pick               pick a rulestring from the list of named rulestrings
-      -r [name]             the name of any named rulestring e.g. `-r Ant Colony`, not case sensitive'''),
-                epilog='See https://github.com/suranwarnakulasooriya/lifesafari for README')
-    parser.add_argument("-r", "--rulestring", nargs='*', type=str, default='B3/S23',
-            help="Rulestring in B{#...}/S{#...} format, see https://conwaylife.com/wiki/Rulestring")
-    parser.add_argument("-d", "--dimension", type=int, default=200,
-            help="Number of cells per row")
-    parser.add_argument("-f", "--fullscreen", action="store_true", default=False, 
-            help="Spawn cells in the entire field (otherwise only in the middle of the screen)")
-    parser.add_argument("-a", "--age", action="store_true", default=False,
-            help="Change cell color based on age spent alive")
-    parser.add_argument("-s", "--seed", type=int, default=-1,
-            help="Random seed to replicate results")
-    parser.add_argument("-b", "--bgcolor", type=str, default='k',
-            help="Color of dead cells (matplotlib)")
-    parser.add_argument("-c", "--colormap", type=str, default='rainbow_r',
-            help="Colormap of live cells (matplotlib)")
-    parser.add_argument("-l", "--list", action="store_true", default=False,
-            help="Print list of named rulestrings and exit")
-    parser.add_argument("-n", "--newname", nargs=2,
-            help="Save a rulestring and give it a name, exit")
-    
-    # load saved rulestrings
-    try:
-        with open('savedlifes.json','r') as savefile:
-            string_to_name = json.load(savefile)
-    except:
-        print('No savefile located, make sure savedlifes.json is in the same directory')
-        string_to_name = {'B3/S23':"Conway's Game of Life"}
-    
-    rulestrings = list(string_to_name.keys())
-    names = [i.lower() for i in list(string_to_name.values())]
-    name_to_string = dict(zip(names,rulestrings))
+# parser
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description=('''\
+LifeSafari: Simulate any life-like grid-based cellular automaton in Python
+--------------------------------
+simulation controls:
+  SPACE                 toggle pause
+  a                     toggle showing cell age (see -a)
+  c                     toggle whether cells spawn in the middle of the screen (see -f), use r or n to restart
+  r                     restart simulation with same seed
+  n                     restart simulation with new seed (overwrites previous seed)
+  ESC/q                 close simulation
 
+random generation with -r:
+  -r random             generate completely random rulestring
+  -r lifelike           same as random but guarantees consecutive numbers
+  -r pick               pick a rulestring from the list of named rulestrings
+  -r [name]             the name of any named rulestring e.g. `-r Ant Colony`, not case sensitive'''),
+            epilog='See https://github.com/suranwarnakulasooriya/lifesafari for README')
+parser.add_argument("-r", "--rulestring", nargs='*', type=str, default='B3/S23',
+        help="Rulestring in B{#...}/S{#...} format, see https://conwaylife.com/wiki/Rulestring")
+parser.add_argument("-d", "--dimension", type=int, default=200,
+        help="Number of cells per row")
+parser.add_argument("-f", "--fullscreen", action="store_true", default=False, 
+        help="Spawn cells in the entire field (otherwise only in the middle of the screen)")
+parser.add_argument("-a", "--age", action="store_true", default=False,
+        help="Change cell color based on age spent alive")
+parser.add_argument("-s", "--seed", type=int, default=-1,
+        help="Random seed to replicate results")
+parser.add_argument("-b", "--bgcolor", type=str, default='k',
+        help="Color of dead cells (matplotlib)")
+parser.add_argument("-c", "--colormap", type=str, default='rainbow_r',
+        help="Colormap of live cells (matplotlib)")
+parser.add_argument("-l", "--list", action="store_true", default=False,
+        help="Print list of named rulestrings and exit")
+parser.add_argument("-n", "--newname", nargs=2,
+        help="Save a rulestring and give it a name, exit")
+
+# load saved rulestrings
+try:
+    with open('savedlifes.json','r') as savefile:
+        string_to_name = json.load(savefile)
+except:
+    print('No savefile located, make sure savedlifes.json is in the same directory')
+    string_to_name = {'B3/S23':"Conway's Game of Life"}
+
+rulestrings = list(string_to_name.keys())
+names = [i.lower() for i in list(string_to_name.values())]
+name_to_string = dict(zip(names,rulestrings))
+
+if __name__ == '__main__':
     # parse
     args = parser.parse_args()
 
@@ -304,6 +303,3 @@ def main():
     ani = anim.FuncAnimation(fig, animate,
                         frames = 200, interval = 22, blit = True, cache_frame_data=False)
     plt.show()
-
-if __name__ == '__main__':
-    main()
