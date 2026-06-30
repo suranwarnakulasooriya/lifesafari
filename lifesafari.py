@@ -8,7 +8,7 @@ def get_random_rules(lifelike=False):
     '''Create a random rulestring.'''
     b = np.array(list(range(0,9)))
     s = b.copy()
-    if lifelike:
+    if lifelike: # get consecutive ranges
         b_a = np.random.randint(0,9,dtype=int)
         if b_a < 8:
             b_b = np.random.randint(b_a,9,dtype=int)
@@ -21,7 +21,7 @@ def get_random_rules(lifelike=False):
             s_b = 9
         b = b[b_a:b_b+1]
         s = s[s_a:s_b+1]
-    else:
+    else: # use masks to get random sets
         bm = np.random.randint(0,2,size=9,dtype=int)
         sm = np.random.randint(0,2,size=9,dtype=int)
         b *= bm
@@ -33,15 +33,15 @@ def get_random_rules(lifelike=False):
 
 def read_rules(rule_set,nts,default='B3/S23'):
     '''Parse ruleset from given rulestring, default to B3/S23 if invalid.'''
-    if rule_set in list(nts.keys()):
+    if rule_set in list(nts.keys()): # convert name to string
         return read_rules(nts[rule_set],nts)
     rules = list(rule_set)
-    if rules[0] == 'B' and '/S' in rule_set:
+    if rules[0] == 'B' and '/S' in rule_set: # ensure correct format
         rules.pop(0)
         rules.remove('/')
         rules.remove('S')
         try:
-            _ = [int(i) for i in rules] # check if every character is an integer
+            _ = [int(i) for i in rules] #every character should be an integer
             born = rule_set[1:rule_set.index('/')]
             if born != '':
                 for b in born:
@@ -52,7 +52,6 @@ def read_rules(rule_set,nts,default='B3/S23'):
                 born = tuple(set(sorted(tuple([int(b) for b in born]))))
                 survive = tuple(set(sorted(tuple([int(s) for s in survive]))))
                 return (born,survive)
-
         except ValueError:
             pass
     # default to Conway 
@@ -92,7 +91,7 @@ def update(g,L,h,rule_set):
     new_g = np.zeros((gamesize,gamesize),dtype=int)
     new_L = []
 
-    if 2*len(L) < gamesize*gamesize: # check over live cells
+    if 2*len(L) < gamesize*gamesize: # check over live cells and neighbors
         cells_to_check = get_all_check(L)
         for cell in cells_to_check:
             new_state = get_next_state(cell,g,rule_set)
@@ -133,60 +132,61 @@ def init_grid(c,gs,s):
     h = g.copy()
     return g, L, h
 
-# parser
-parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description=('''\
-LifeSafari: Simulate any life-like grid-based cellular automaton in Python
---------------------------------
-simulation controls:
-  SPACE                 toggle pause
-  a                     toggle showing cell age (see -a)
-  c                     toggle whether cells spawn in the middle of the screen (see -f), use r or n to restart
-  r                     restart simulation with same seed
-  n                     restart simulation with new seed (overwrites previous seed)
-  ESC/q                 close simulation
+def main():
+    '''Mainloop.'''
+    # parser
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description=('''\
+    LifeSafari: Simulate any life-like grid-based cellular automaton in Python
+    --------------------------------
+    simulation controls:
+      SPACE                 toggle pause
+      a                     toggle showing cell age (see -a)
+      c                     toggle whether cells spawn in the middle of the screen (see -f), use r or n to restart
+      r                     restart simulation with same seed
+      n                     restart simulation with new seed (overwrites previous seed)
+      ESC/q                 close simulation
+    
+    random generation with -r:
+      -r random             generate completely random rulestring
+      -r lifelike           same as random but guarantees consecutive numbers
+      -r pick               pick a rulestring from the list of named rulestrings
+      -r [name]             the name of any named rulestring e.g. `-r Ant Colony`, not case sensitive'''),
+                epilog='See https://github.com/suranwarnakulasooriya/lifesafari for README')
+    parser.add_argument("-r", "--rulestring", nargs='*', type=str, default='B3/S23',
+            help="Rulestring in B{#...}/S{#...} format, see https://conwaylife.com/wiki/Rulestring")
+    parser.add_argument("-d", "--dimension", type=int, default=200,
+            help="Number of cells per row")
+    parser.add_argument("-f", "--fullscreen", action="store_true", default=False, 
+            help="Spawn cells in the entire field (otherwise only in the middle of the screen)")
+    parser.add_argument("-a", "--age", action="store_true", default=False,
+            help="Change cell color based on age spent alive")
+    parser.add_argument("-s", "--seed", type=int, default=-1,
+            help="Random seed to replicate results")
+    parser.add_argument("-b", "--bgcolor", type=str, default='k',
+            help="Color of dead cells (matplotlib)")
+    parser.add_argument("-c", "--colormap", type=str, default='rainbow_r',
+            help="Colormap of live cells (matplotlib)")
+    parser.add_argument("-l", "--list", action="store_true", default=False,
+            help="Print list of named rulestrings and exit")
+    parser.add_argument("-n", "--newname", nargs=2,
+            help="Save a rulestring and give it a name, exit")
+    
+    # load saved rulestrings
+    try:
+        with open('savedlifes.json','r') as savefile:
+            string_to_name = json.load(savefile)
+    except:
+        print('No savefile located, make sure savedlifes.json is in the same directory')
+        string_to_name = {'B3/S23':"Conway's Game of Life"}
+    
+    rulestrings = list(string_to_name.keys())
+    names = [i.lower() for i in list(string_to_name.values())]
+    name_to_string = dict(zip(names,rulestrings))
 
-random generation with -r:
-  -r random             generate completely random rulestring
-  -r lifelike           same as random but guarantees consecutive numbers
-  -r pick               pick a rulestring from the list of named rulestrings
-  -r [name]             the name of any named rulestring e.g. `-r Ant Colony`, not case sensitive'''),
-            epilog='See https://github.com/suranwarnakulasooriya/lifesafari for README')
-parser.add_argument("-r", "--rulestring", nargs='*', type=str, default='B3/S23',
-        help="Rulestring in B{#...}/S{#...} format, see https://conwaylife.com/wiki/Rulestring")
-parser.add_argument("-d", "--dimension", type=int, default=200,
-        help="Number of cells per row")
-parser.add_argument("-f", "--fullscreen", action="store_true", default=False, 
-        help="Spawn cells in the entire field (otherwise only in the middle of the screen)")
-parser.add_argument("-a", "--age", action="store_true", default=False,
-        help="Change cell color based on age spent alive")
-parser.add_argument("-s", "--seed", type=int, default=-1,
-        help="Random seed to replicate results")
-parser.add_argument("-b", "--bgcolor", type=str, default='k',
-        help="Color of dead cells (matplotlib)")
-parser.add_argument("-c", "--colormap", type=str, default='rainbow_r',
-        help="Colormap of live cells (matplotlib)")
-parser.add_argument("-l", "--list", action="store_true", default=False,
-        help="Print list of named rulestrings and exit")
-parser.add_argument("-n", "--newname", nargs=2,
-        help="Save a rulestring and give it a name, exit")
-
-# load saved rulestrings
-try:
-    with open('savedlifes.json','r') as savefile:
-        string_to_name = json.load(savefile)
-except:
-    print('No savefile located')
-    string_to_name = {'B3/S23':"Conway's Game of Life"}
-
-rulestrings = list(string_to_name.keys())
-names = [i.lower() for i in list(string_to_name.values())]
-name_to_string = dict(zip(names,rulestrings))
-
-if __name__ == '__main__':
     # parse
     args = parser.parse_args()
 
-    # print named rulestring and exit
+    # print named rulestrings and exit
     printnames = args.list
     if printnames:
         print(json.dumps(string_to_name,indent=4)); exit()
@@ -216,12 +216,13 @@ if __name__ == '__main__':
     colormap = args.colormap
 
     seed = args.seed
-    if seed < 0:
+    if seed < 0: # generate random seed for use in all other random calls
         seed = np.random.randint(0,99999999)
     np.random.seed(seed)
     
     ruleset = ' '.join(args.rulestring) if args.rulestring != 'B3/S23' else args.rulestring
 
+    # special ruleset inputs
     if ruleset == 'random':
         ruleset = get_random_rules()
     elif ruleset == 'lifelike':
@@ -229,19 +230,27 @@ if __name__ == '__main__':
     elif ruleset == 'pick':
         ruleset = np.random.choice(list(string_to_name.keys()))
 
-    rules = read_rules(ruleset,name_to_string)
-    ruleset = 'B'+''.join(map(str,sorted(rules[0])))+'/S'+''.join(map(str,sorted(rules[1])))
-    try:
-        ruleset = name_to_string[ruleset]
-    except KeyError:
-        pass
-    
-    cmap = plt.colormaps[colormap].copy()
-    cmap.set_bad(color=bg_color)
+    rules = read_rules(ruleset,name_to_string) # rules as tuple
+    ruleset = 'B'+''.join(map(str,sorted(rules[0])))+'/S'+''.join(map(str,sorted(rules[1]))) # valid rulestring
 
+    try: # set colormap
+        cmap = plt.colormaps[colormap].copy()
+    except KeyError:
+        print(f"! Colormap {colormap} is invalid")
+        colormap = parser.get_default('colormap')
+        cmap = plt.colormaps[colormap].copy()
+        
+    try: # set background color
+        cmap.set_bad(color=bg_color)
+    except ValueError:
+        print(f"! Color {bg_color} is invalid")
+        bg_color = parser.get_default('bgcolor')
+        cmap.set_bad(color=bg_color)
+
+    # intro
     print('Use -h for help, controls, and README')
     print(f'Seed: {seed}')
-    try:
+    try: # print name of rulestring if it exists
         print(f'Rulestring: {ruleset} {string_to_name[ruleset]}')
     except KeyError:
         print(f'Rulestring: {ruleset}')
@@ -279,9 +288,9 @@ if __name__ == '__main__':
         '''Called every frame to update and display simulation.'''
         global grid, live_cells, history, simulation_paused, show_history
 
-        if not simulation_paused:
+        if not simulation_paused: # simulate one tick
             grid, live_cells, history = update(grid,live_cells,history,rules)
-        # mask dead cells with background color
+        # mask dead cells with background color and plot
         if show_history:
             masked_data = np.ma.masked_where(history == 0, history)
             im.set_data(masked_data/128)
@@ -295,3 +304,6 @@ if __name__ == '__main__':
     ani = anim.FuncAnimation(fig, animate,
                         frames = 200, interval = 22, blit = True, cache_frame_data=False)
     plt.show()
+
+if __name__ == '__main__':
+    main()
